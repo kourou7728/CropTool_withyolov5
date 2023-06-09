@@ -5,12 +5,17 @@ import numpy as np
 import torch
 import argparse
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--size', type=int, default=416, help='size to crop the image')
+args = parser.parse_args()
+
+
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 count = 0
 error_list = []
 input_dir = 'input'
 output_dir = 'output'
-size = 416
+
 
 
 if not os.path.exists(input_dir):
@@ -24,18 +29,15 @@ for filename in glob.glob(os.path.join(input_dir, '*.*')):
     try:
         count += 1
         print('正在處理:', os.path.basename(filename))
-        # 讀取圖片
         img = cv2.imread(filename)
-
-        # 使用 YOLOv5 模型進行物件偵測
         results = model(img)
 
-        # 獲取偵測結果
-        pred_boxes = results.xyxy[0][:, :4]  # 偵測到的物件邊界框座標
+        
+        pred_boxes = results.xyxy[0][:, :4] 
 
-        # 裁剪並儲存偵測到的物件圖片
+        # crop&save
         for box in pred_boxes:
-            x1, y1, x2, y2 = box.tolist()  # 取得邊界框座標
+            x1, y1, x2, y2 = box.tolist() 
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
             width = x2 - x1
@@ -55,7 +57,7 @@ for filename in glob.glob(os.path.join(input_dir, '*.*')):
             square_y2 = min(square_y2, img.shape[0]) 
 
             obj_img = img[square_y1:square_y2, square_x1:square_x2]
-            resized_img = cv2.resize(obj_img, (size, size), interpolation=cv2.INTER_AREA)
+            resized_img = cv2.resize(obj_img, (args.size, args.size), interpolation=cv2.INTER_AREA)
             
             
             os.makedirs(output_dir, exist_ok=True)
